@@ -49,10 +49,10 @@ public class UnsafeJacksonObjectDeserialization {
 ```
 
 From the above four examples, it can be concluded that there are several cases of vulnerable Jackson code:
-- 1. exampleOne enables DefaultTyping, and there is an Object type in the serialized class. The default empty constructor is equivalent to `OBJECT_AND_NON_CONCRETE`, which is the second level and can perform object injection;
-- 2. exampleTwo has enabled DefaultTyping, and there is an Object type in the serialized class, and both the interface class and the abstract class can be deserialized, which is the third level, and object injection can be performed;
-- 3. Although DefaultTyping is not enabled for exampleThree, its serialized class is modified by `JsonTypeInfo.Id.CLASS`, and object injection can be performed through `@class`;
-- 4. Although DefaultTyping is not enabled in exampleThree, its serialized class is modified by `JsonTypeInfo.Id.MINIMAL_CLASS`, and object injection can be performed through `@c`;
+1. exampleOne enables DefaultTyping, and there is an Object type in the serialized class. The default empty constructor is equivalent to `OBJECT_AND_NON_CONCRETE`, which is the second level and can perform object injection;
+2. exampleTwo has enabled DefaultTyping, and there is an Object type in the serialized class, and both the interface class and the abstract class can be deserialized, which is the third level, and object injection can be performed;
+3. Although DefaultTyping is not enabled for exampleThree, its serialized class is modified by `JsonTypeInfo.Id.CLASS`, and object injection can be performed through `@class`;
+4. Although DefaultTyping is not enabled in exampleThree, its serialized class is modified by `JsonTypeInfo.Id.MINIMAL_CLASS`, and object injection can be performed through `@c`;
 
 
 Let's look at another false positive example of jackson deserialization white box detection:
@@ -80,8 +80,8 @@ public class JacksonSerialisationFalsePositive implements Serializable {
 ```
 
 illustrate:
-- 1. DefaultTyping is not enabled in exampleOne, and the class to be deserialized is not modified with `JsonTypeInfo.Id.CLASS/MININAL_CLASS`, so object injection cannot be performed;
-- 2. DefaultTyping is not enabled in exampleTwo, and the class to be deserialized is not decorated with `JsonTypeInfo.Id.CLASS/MININAL_CLASS`, so object injection cannot be performed;
+1. DefaultTyping is not enabled in exampleOne, and the class to be deserialized is not modified with `JsonTypeInfo.Id.CLASS/MININAL_CLASS`, so object injection cannot be performed;
+2. DefaultTyping is not enabled in exampleTwo, and the class to be deserialized is not decorated with `JsonTypeInfo.Id.CLASS/MININAL_CLASS`, so object injection cannot be performed;
 
 
 ### jackson deserialization white box detection
