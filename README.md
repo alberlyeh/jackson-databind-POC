@@ -14,35 +14,35 @@ public class UnsafeJacksonObjectDeserialization {
     }
 
     static class AnotherBean {
-        @JsonTypeInfo (use = JsonTypeInfo. Id. CLASS)
+        @JsonTypeInfo (use = JsonTypeInfo.Id.CLASS)
         public Object obj;
     }
 
     static class YetAnotherBean {
-        @JsonTypeInfo (use = JsonTypeInfo. Id. MINIMAL_CLASS)
+        @JsonTypeInfo (use = JsonTypeInfo.Id.MINIMAL_CLASS)
         public Object obj;
     }
 
     public void exampleOne(String JSON) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         mapper.enableDefaultTyping();
-        Object obj = mapper. readValue(JSON, ABean. class);
+        Object obj = mapper.readValue(JSON, ABean.class);
     }
 
     public void exampleTwo(String JSON) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         mapper.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_CONCRETE_AND_ARRAYS);
-        Object obj = mapper. readValue(JSON, ABean. class);
+        Object obj = mapper.readValue(JSON, ABean.class);
     }
 
     public void exampleThree(String JSON) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
-        Object obj = mapper. readValue(JSON, AnotherBean. class);
+        Object obj = mapper.readValue(JSON, AnotherBean.class);
     }
 
     public void exampleFour(String JSON) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
-        Object obj = mapper. readValue(JSON, YetAnotherBean. class);
+        Object obj = mapper.readValue(JSON, YetAnotherBean.class);
     }
 
 }
@@ -69,12 +69,12 @@ public class JacksonSerialisationFalsePositive implements Serializable {
 
     public void exampleOne(String JSON) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
-        Object obj = mapper. readValue(JSON, JacksonSerialisationFalsePositive. class);
+        Object obj = mapper.readValue(JSON, JacksonSerialisationFalsePositive.class);
     }
 
     public void exampleTwo(String JSON) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
-        Object obj = mapper. readValue(JSON, Bean. class);
+        Object obj = mapper.readValue(JSON, Bean.class);
     }
 }
 ```
@@ -115,17 +115,17 @@ An example of C is given below:
 public class Jackson {
 
     static class AnotherBean {
-        @JsonTypeInfo (use = JsonTypeInfo. Id. CLASS)
+        @JsonTypeInfo (use = JsonTypeInfo.Id.CLASS)
         public Object obj;
     }
 
-    @RequestMapping(value = "/deserialize3", method = {RequestMethod. POST})
+    @RequestMapping(value = "/deserialize3", method = {RequestMethod.POST})
     @ResponseBody
     public static String deserialize3(@RequestBody String params) throws IOException {
         System.out.println(params);
         try {
             ObjectMapper objectMapper = new ObjectMapper();
-            Object obj = objectMapper. readValue(params, AnotherBean. class);
+            Object obj = objectMapper.readValue(params, AnotherBean.class);
             return obj.toString();
         } catch (Exception e){
             e.printStackTrace();
